@@ -32,15 +32,16 @@ shinyUI(fluidPage(theme = "bootstrap.css",
   navbarPage("archiDART",
     tabPanel("Load data", id="tab1", icon = icon("upload"),
       fluidRow(
-        column(4, 
+        column(4,
+               h4("archiDART"),
                helpText("This app show the capabilities of the archiDART package. To do so, we create 70 synthetic root system using the root model ArchiSimple [Pagès et al. 2014]."),
-              helpText("The root architectures are classified into different genotypes (mock, dense and sparse, steep and shallow, slow and fast), to show how archiDART can differentiate them."),
+               helpText("The root architectures are classified into different genotypes (mock, dense and sparse, steep and shallow, slow and fast), to show how archiDART can differentiate them."),
                #  textInput('path', 'Choose folder with all data files'),
                #  # fileInput('test_file', 'Choose file with testing data', accept=c('text/comma-separated-values', '.csv')),
                # checkboxInput('use_example', "Use example data", value = T, width = NULL),
                # bsButton(inputId = "load_data", type = "action", style="primary", label="Load data",icon("upload")),
                tags$hr(),
-               img(src='logo.jpg', align = "left", width="80%")
+               img(src='logo.jpg', align = "left", width="100%")
         ),
         column(7, 
                fluidRow(
@@ -58,30 +59,14 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                helpText("Distribution of the data computed by architect."),
                tags$hr(),
                DT::dataTableOutput('distribution_data')
-               
-
-               
-               # DT::dataTableOutput('train_data')
-        )#,
-        # column(4, 
-        #        h4("Testing datatable"),
-        #        tags$hr(),
-        #        helpText("This table contains the data that will be used for the testing the Random Forest model"),
-        #        tags$hr(),
-        #        textOutput("test_text"),
-        #        tags$head(tags$style("#test_text{color: #28aa46;
-        #                            font-weight: bold;
-        #                             }"
-        #        )),
-        #        tags$hr(),
-        #        DT::dataTableOutput('test_data')
-        # )
+        )
       )
     ),
-    tabPanel("ArchiTect", id="tab2", icon = icon('sliders'),
+    tabPanel("archiTect", id="tab2", icon = icon('sliders'),
         fluidRow(
           column(3, 
-              helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+              h4("archiTect"),
+              helpText("The architect function load the data from the different RSML files, store them into a unique data table, then computes aggregated metrics for each root system."),
               selectInput("genotypes_to_plot", label="Genotypes to plot", choices = c("Load datafile"), 
                           selected = NULL, multiple = TRUE, width="100%"),
               checkboxInput('plot_mean', "Plot average by genotype", value = T, width = NULL),
@@ -102,17 +87,17 @@ shinyUI(fluidPage(theme = "bootstrap.css",
           )
         )
     ),
-    tabPanel("ArchiDraw", id="tab3",icon = icon("pencil"),
+    tabPanel("archiDraw", id="tab3",icon = icon("pencil"),
        fluidRow(
          column(3, 
                 helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
                 selectInput("genotypes_to_plot_1", label="Genotypes to plot", choices = c("Load datafile"), 
                             selected = NULL, multiple = TRUE, width="100%"),
-                sliderInput("reps_to_plot", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 10),
+                sliderInput("reps_to_plot", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 3),
                 sliderInput("ncol", "Number of columns", min = 1, max=10, step = 1, value = 3),
                 checkboxInput('plot_mean_archi', "Plot average architecture by genotype", value = T, width = NULL),
                 tags$hr(),
-                img(src='logo.jpg', align = "left", width="80%")
+                img(src='logo.jpg', align = "left", width="100%")
          ),
          column(8,
                 fluidRow(
@@ -128,7 +113,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
           )
        )
     ),
-    tabPanel("ArchiPCA", id="tab3",icon = icon("bullseye"),
+    tabPanel("archiPCA", id="tab3",icon = icon("bullseye"),
       fluidRow(
       column(3, 
              helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
@@ -137,7 +122,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
              selectInput("genotypes_to_plot_2", label="Genotypes to plot", choices = c("Load datafile"), 
                          selected = NULL, multiple = TRUE, width="100%"),
              tags$hr(),
-             img(src='logo.jpg', align = "left", width="80%")
+             img(src='logo.jpg', align = "left", width="100%")
       ),
       column(7,
              fluidRow(
@@ -152,7 +137,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
       )
     )      
     ), 
-    tabPanel("ArchiGrow", id="tab3",icon = icon("hourglass-half")
+    tabPanel("archiGrow", id="tab3",icon = icon("hourglass-half")
     ), 
     tabPanel("About", id="tab4", icon=icon("plus-circle"),
       fluidRow(
@@ -163,7 +148,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
             tags$hr(),
             h4("How to use archiDART"),
             helpText(""),
-            actionButton(inputId='ab1', label="PRIMAL webpage", icon = icon("cogs"), onclick ="window.open('https://plantmodelling.github.io/primal/', '_blank')"),
+            actionButton(inputId='ab1', label="archiDART webpage", icon = icon("cogs"), onclick ="window.open('https://cran.r-project.org/web/packages/archiDART/index.html', '_blank')"),
             tags$hr(),
             h4("How to cite archiDART"),
             tags$strong("archiDART: an R package for the automated computation of plant root architectural traits"),
