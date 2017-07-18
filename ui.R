@@ -33,26 +33,28 @@ shinyUI(fluidPage(theme = "bootstrap.css",
     tabPanel("Load data", id="tab1", icon = icon("upload"),
       fluidRow(
         column(4, 
-                textInput('path', 'Choose folder with all data files'),
-                # fileInput('test_file', 'Choose file with testing data', accept=c('text/comma-separated-values', '.csv')),
-               checkboxInput('use_example', "Use example data", value = T, width = NULL),
-               bsButton(inputId = "load_data", type = "action", style="primary", label="Load data",icon("upload")),
-               tags$hr(),
-               textOutput("text0"),
-               tags$head(tags$style("#text0{color: #28aa46;
-                                   font-weight: bold;
-                                   }"
-               )
-               ),
+               helpText("This app show the capabilities of the archiDART package. To do so, we create 70 synthetic root system using the root model ArchiSimple [Pagès et al. 2014]."),
+              helpText("The root architectures are classified into different genotypes (mock, dense and sparse, steep and shallow, slow and fast), to show how archiDART can differentiate them."),
+               #  textInput('path', 'Choose folder with all data files'),
+               #  # fileInput('test_file', 'Choose file with testing data', accept=c('text/comma-separated-values', '.csv')),
+               # checkboxInput('use_example', "Use example data", value = T, width = NULL),
+               # bsButton(inputId = "load_data", type = "action", style="primary", label="Load data",icon("upload")),
                tags$hr(),
                img(src='logo.jpg', align = "left", width="80%")
         ),
         column(7, 
-               h4("Overview of the dataset"),
+               fluidRow(
+                 column(6, h4("Overview of the dataset")),
+                 column(6, checkboxInput('show_load_code', "Show me the code to load the data", value = F, width = NULL))
+               ),     
+               conditionalPanel(
+                 condition = "input.show_load_code == true",
+                 verbatimTextOutput("load_code")
+               ),
                tags$hr(),
-               selectInput("to_plot_1", label = "Variable to plot", choices = c("Load datafile")),
-               plotOutput("distribution_plot"),
-               tags$hr(),
+               # selectInput("to_plot_1", label = "Variable to plot", choices = c("Load datafile")),
+               # plotOutput("distribution_plot"),
+               # tags$hr(),
                helpText("Distribution of the data computed by architect."),
                tags$hr(),
                DT::dataTableOutput('distribution_data')
@@ -83,13 +85,20 @@ shinyUI(fluidPage(theme = "bootstrap.css",
               selectInput("genotypes_to_plot", label="Genotypes to plot", choices = c("Load datafile"), 
                           selected = NULL, multiple = TRUE, width="100%"),
               checkboxInput('plot_mean', "Plot average by genotype", value = T, width = NULL),
-              
               tags$hr(),
               img(src='logo.jpg', align = "left", width="80%")
           ),
-          column(9,
+          column(8,
+                 fluidRow(
+                   column(6, h4("Evolution of root system metrics")),
+                   column(6, checkboxInput('show_time_code', "Show me the code for this awesome plot", value = F, width = NULL))
+                  ),
+                 conditionalPanel(
+                   condition = "input.show_time_code == true",
+                   verbatimTextOutput("time_code")
+                  ),
                  selectInput("to_plot", label = "Variable to plot", choices = c("Load datafile")),
-                 plotlyOutput("time_plot")
+                 plotOutput("time_plot")
           )
         )
     ),
@@ -100,20 +109,51 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                 selectInput("genotypes_to_plot_1", label="Genotypes to plot", choices = c("Load datafile"), 
                             selected = NULL, multiple = TRUE, width="100%"),
                 sliderInput("reps_to_plot", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 10),
-                sliderInput("ncol", "Number of columns", min = 1, max=10, step = 1, value = 10),
+                sliderInput("ncol", "Number of columns", min = 1, max=10, step = 1, value = 3),
                 checkboxInput('plot_mean_archi', "Plot average architecture by genotype", value = T, width = NULL),
                 tags$hr(),
                 img(src='logo.jpg', align = "left", width="80%")
          ),
-         column(9,
+         column(8,
+                fluidRow(
+                  column(6, h4("Plot the architecture")),
+                  column(6, checkboxInput('show_archi_code', "Show me the code for this awesome plot", value = F, width = NULL))
+                ),                
+                conditionalPanel(
+                  condition = "input.show_archi_code == true",
+                  verbatimTextOutput("archi_code")
+                ),
                 selectInput("to_plot_2", label = "Variable to plot", choices = c("age", "diameter", "order")),
-                plotOutput("archi_plot", height = 1000),
-                tags$head(tags$style("#archi_plot{valign: top;}"))
-         )
+                plotOutput("archi_plot", height = 1000)
+          )
        )
     ),
+    tabPanel("ArchiPCA", id="tab3",icon = icon("bullseye"),
+      fluidRow(
+      column(3, 
+             helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+             selectInput("variable_to_pca", label="Variables to include in PCA", choices = c("Load datafile"), 
+                         selected = NULL, multiple = TRUE, width="100%"),
+             selectInput("genotypes_to_plot_2", label="Genotypes to plot", choices = c("Load datafile"), 
+                         selected = NULL, multiple = TRUE, width="100%"),
+             tags$hr(),
+             img(src='logo.jpg', align = "left", width="80%")
+      ),
+      column(7,
+             fluidRow(
+               column(6, h4("Plot the principal component analysis")),
+               column(6, checkboxInput('show_pca_code', "Show me the code for this awesome plot", value = F, width = NULL))
+             ),                
+             conditionalPanel(
+               condition = "input.show_pca_code == true",
+               verbatimTextOutput("pca_code")
+             ),
+             plotOutput("pca_plot", height = 800)
+      )
+    )      
+    ), 
     tabPanel("ArchiGrow", id="tab3",icon = icon("hourglass-half")
-    ),    
+    ), 
     tabPanel("About", id="tab4", icon=icon("plus-circle"),
       fluidRow(
         column(3),

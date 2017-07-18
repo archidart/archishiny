@@ -30,7 +30,9 @@ library(DT)
 library(shinyBS)
 library(data.table)
 library(archiDART)
-library(plotly)
+#library(plotly)
+library(gridExtra)
+library(ggrepel)
 
 source("www/rsmlToTable.R")
 
