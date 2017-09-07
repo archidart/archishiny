@@ -124,7 +124,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                       tags$hr(),
                       img(src='logo.jpg', align = "left", width="100%")
                ),
-               column(8,
+               column(5,
                       fluidRow(
                         column(6, h4("Plot the barcodes")),
                         column(6, checkboxInput('show_barcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
@@ -133,7 +133,30 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                         condition = "show_barcode_code == true",
                         verbatimTextOutput("barcode_code")
                       ),
+                      selectInput("to_plot_3", label = "Variable to plot", choices = c("depth" = "depth", "geodesic distance"="geodesic")),
                       plotOutput("barcode_plot", height = 700)
+               ),
+              column(3, 
+                     fluidRow(
+                       column(6, h4("Boxplot the barcodes")),
+                       column(6, checkboxInput('show_boxcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
+                     ),                
+                     conditionalPanel(
+                       condition = "show_boxcode_code == true",
+                       verbatimTextOutput("boxcode_code")
+                     ),                     
+                      selectInput("to_plot_4", label = "Variable to plot", choices = c("Load datafile")),
+                      plotOutput("barcode_boxplot", height = 300),
+                     
+                     fluidRow(
+                       column(6, h4("PCA the barcodes")),
+                       column(6, checkboxInput('show_barcode_PCA_code', "Show me the code for this awesome plot", value = F, width = NULL))
+                     ),                
+                     conditionalPanel(
+                       condition = "show_barcode_PCA_code == true",
+                       verbatimTextOutput("boxcode_PCA_code")
+                     ),                         
+                     plotOutput("barcode_PCA", height = 300) 
                )
              )
     ),    

@@ -25,69 +25,101 @@ shinyServer(
       load("www/archi.RData")
       load("www/genotypes.RData")
       load("www/perh.RData")
+      load("www/perh_summary.RData")
       load("www/perhomology.RData")
+      load("www/distances.RData")
       rs$architect <- architect
       rs$genotypes <- genotypes
       rs$archi <- archi
       rs$perh <- perh
+      rs$distances <- distance
+      rs$perh_summary <- perh_summary
       rs$perhomology <- perhomology
 
-    # path <- "../rsmls/"
-    # architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")
-    # genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
-    # architect$genotype <- genotypes
-    # save(architect, file="www/architect.RData") 
-    # save(genotypes, file="www/genotypes.RData")
-    # archi <- rsmlToTable(path)
-    # genotypes <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 1))[]
-    # rep <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 3))[]
-    # archi$genotype <- genotypes
-    # archi$rep <- rep
-    # archi$age <- as.numeric(archi$time)
-    # save(archi, file="www/archi.RData")
-    #   
-    # perhomology <- perhomology(archi)
-    # # perhomology2 <- perhomology(archi, FUN="geodesic")
-    # save(archi, file="www/perhomology.RData")
-    # names  <- names(perhomology)
-    # perh <- NULL
-    # for(i in c(1:length(perhomology))){
-    #   temp <- data.frame(perhomology[[i]])
-    #   temp$y <- c(1:nrow(temp))
-    #   temp$file <- names[i]
-    #   perh <- rbind(perh, temp)
-    # }
-    # genotypes <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 1))[]
-    # rep <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 3))[]
-    # perh$genotype <- genotypes
-    # perh$rep <- rep
-    # save(archi, file="www/perh.RData")
-    # # 
-    #   
-    # dist_1 <- bottleneckdist(perhomology)
-    # # dist_2 <- bottleneckdist(perhomology2)
-    #   # PCA(perh_PCA)
-    # 
-    # 
-    # #Compute new distance matrix
-    # # distance<-sqrt(dist_1^2+dist_2^2)
-    # distance<-as.data.frame(dist_1)
-    # genotypes <- c(rep("dense", 10),rep("fast", 10),rep("mock", 10),rep("shallow", 10),rep("slow", 10),rep("sparse", 10),rep("steep", 10))
-    # 
-    # pca <- prcomp(distance, retx = T, scale=T)  # Make the PCA
-    # pca.results <- cbind(genotype=genotypes, data.frame(pca$x)[,])
-    # 
-    # vars <- apply(pca$x, 2, var)  
-    # props <- round((vars / sum(vars) * 100), 1)
-    # xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
-    # yl <-paste0("Principal Component 2 (",props[2],"%)\n")
-    # 
-    # ggplot(data = pca.results) + 
-    #   geom_point(aes(PC1, PC2, colour=genotype)) +
-    #   stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) + 
-    #   theme_bw() + 
-    #   xlab(xl) + 
-    #   ylab(yl)    
+      
+      ## Preprocess the data manaully
+      if(1==2){
+           path <- "../rsmls/"
+          architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")
+          genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
+          architect$genotype <- genotypes
+          save(architect, file="www/architect.RData")
+          save(genotypes, file="www/genotypes.RData")
+          archi <- rsmlToTable(path)
+          genotypes <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 1))[]
+          rep <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 3))[]
+          archi$genotype <- genotypes
+          archi$rep <- rep
+          archi$age <- as.numeric(archi$time)
+          save(archi, file="www/archi.RData")
+      
+          perhomology <- perhomology(archi, FUN="geodesic")
+          perhomology2 <- perhomology(archi, FUN="depth")
+          dist_1 <- bottleneckdist(perhomology)
+          dist_2 <- bottleneckdist(perhomology2)
+      
+          distance <- sqrt(dist_1^2 + dist_2^2)
+          distance <- as.data.frame(distance)
+          distance$genotypes <- c(rep("dense", 10),rep("fast", 10),rep("mock", 10),rep("shallow", 10),rep("slow", 10),rep("sparse", 10),rep("steep", 10))
+          save(distance, file="www/distances.RData")
+      
+          save(perhomology, file="www/perhomology.RData")
+          names  <- names(perhomology)
+          perh <- NULL
+          for(i in c(1:length(perhomology))){
+            temp <- data.frame(perhomology[[i]])
+            temp$y <- c(1:nrow(temp))
+            temp$type <- "geodesic"
+            temp$file <- names[i]
+            perh <- rbind(perh, temp)
+          }
+          for(i in c(1:length(perhomology2))){
+            temp <- data.frame(perhomology2[[i]])
+            temp$y <- c(1:nrow(temp))
+            temp$type <- "depth"
+            temp$file <- names[i]
+            perh <- rbind(perh, temp)
+          }
+          genotypes <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 1))[]
+          rep <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 3))[]
+          perh$genotype <- genotypes
+          perh$rep <- rep
+          save(perh, file="www/perh.RData")
+      
+      
+            # PCA(perh_PCA)
+      
+      
+          #Compute new distance matrix
+          # distance<-sqrt(dist_1^2+dist_2^2)
+
+          pca <- prcomp(distance, retx = T, scale=T)  # Make the PCA
+          pca.results <- cbind(genotype=genotypes, data.frame(pca$x)[,])
+      
+          vars <- apply(pca$x, 2, var)
+          props <- round((vars / sum(vars) * 100), 1)
+          xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
+          yl <-paste0("Principal Component 2 (",props[2],"%)\n")
+      
+          ggplot(data = pca.results) +
+            geom_point(aes(PC1, PC2, colour=genotype)) +
+            stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) +
+            theme_bw() +
+            xlab(xl) +
+            ylab(yl)
+      
+          perh_summary <- ddply(perh, .(file, genotype, rep, type), summarise, sumdeath=sum(death),
+                          sumbirth = sum(birth),
+                          maxdeath = max(death),
+                          maxbirth = max(birth),
+                          ndeath = length(death),
+                          nbirth = length(birth),
+                          life = mean(birth-death))
+            save(perh_summary, file="www/perh_summary.RData")
+            ggplot(temp, aes(genotype, nbirth, fill=genotype)) +
+              geom_boxplot() +
+              theme_classic()
+      }
       
 
   })
@@ -101,12 +133,7 @@ architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")
 genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
 architect$genotype <- genotypes
 
-filenames.rsml<-list.files(path=path, pattern="\\.rsml$")
-archi <- NULL
-for(f in filenames.rsml){
-  archi <- rbind(archi, rsmlToTable(paste0(path, f)))
-  message(paste0(f," done"))
-}
+archi <- rsmlToTable(path)
 genotypes <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 1))[]
 rep <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 3))[]
 archi$genotype <- genotypes
@@ -138,6 +165,17 @@ archi$age <- as.numeric(archi$age)'
     if(length(sel) == 0 | sel == "") sel = ct_options[1]
     # cts  <- c("tot_root_length","n_laterals","tot_lat_length")
     updateSelectInput(session, "to_plot", choices = ct_options, selected=sel) 
+  })
+  
+  observe({
+    if(is.null(rs$perh_summary)){return()}
+    vars <- colnames(rs$perh_summary)[-c(1:4)]
+    ct_options <- list()
+    sel <- input$to_plot_4
+    for(ct in vars) ct_options[[ct]] <- ct
+    if(length(sel) == 0 | sel == "") sel = ct_options[1]
+    # cts  <- c("tot_root_length","n_laterals","tot_lat_length")
+    updateSelectInput(session, "to_plot_4", choices = ct_options, selected=sel) 
   })
   
   observe({
@@ -326,6 +364,7 @@ ggplot(archi) +
     if(is.null(rs$perh)){return()}
     
     temp <- rs$perh[rs$perh$genotype %in% input$genotypes_to_plot_2,]
+    temp <- temp[temp$type == input$to_plot_3,]
     temp <- temp[as.numeric(temp$rep) <= input$reps_to_plot_2,]
 
     alph <- 1/input$reps_to_plot_2
@@ -341,6 +380,50 @@ ggplot(archi) +
     
     pl
   })
+  
+  output$barcode_boxplot <- renderPlot({
+    if(is.null(rs$perh_summary)){return()}
+    
+    temp <- rs$perh_summary[rs$perh_summary$genotype %in% input$genotypes_to_plot_2,]
+    temp <- temp[temp$type == input$to_plot_3,]
+    
+    temp$value <- temp[[input$to_plot_4]]
+
+    pl <- ggplot(temp, aes(genotype, value, fill=genotype)) + 
+      geom_boxplot() + 
+      theme_classic() +
+      theme(legend.position = "none",
+            text=element_text(size=15),
+            axis.text.x = element_text(angle = 45, hjust = 1))+
+      ylab(input$to_plot_4) + 
+      xlab("Genotype")
+    
+    
+    pl
+  })  
+  
+  output$barcode_PCA <- renderPlot({
+    if(is.null(rs$distances)){return()}
+    distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_to_plot_2,])
+    
+    pca <- prcomp(distance[,-(length(distance))], retx = T, scale=T)  # Make the PCA
+    pca.results <- cbind(genotype=distance$genotypes, data.frame(pca$x)[,])
+    
+    vars <- apply(pca$x, 2, var)
+    props <- round((vars / sum(vars) * 100), 1)
+    xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
+    yl <-paste0("Principal Component 2 (",props[2],"%)\n")
+    
+    pl <- ggplot(data = pca.results) +
+      geom_point(aes(PC1, PC2, colour=genotype)) +
+      stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) +
+      theme_bw() +
+      xlab(xl) +
+      ylab(yl)
+    
+    pl
+  })
+  
   
   output$barcode_code <- renderText({
 
@@ -377,12 +460,16 @@ ggplot(archi) +
   output$pca_plot <- renderPlot({
     if(is.null(rs$architect)){return()}
     
-    temp <- rs$architect[rs$architect$genotype %in% input$genotypes_to_plot_2,]
+    temp <- rs$architect[rs$architect$genotype %in% input$genotypes_to_plot_3,]
     temp <- temp[temp$Time == input$time_to_plot,]
     plants <- temp$FileName
     genotypes <- temp$genotype
     temp <- temp[,input$variable_to_pca]
-    print(temp)
+    remove <- NULL
+    for(i in c(1:ncol(temp))){
+      if(sd(temp[,i]) == 0) remove <- c(remove,i)
+    }
+    temp <- temp[,-remove]
     pca <- prcomp(temp, retx = T, scale=T)  # Make the PCA
     pca.results <- cbind(plant=plants, genotype=genotypes, data.frame(pca$x)[,])
     
