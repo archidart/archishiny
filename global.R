@@ -22,8 +22,7 @@
 # 
 # NOTE: The GPL.v3 license requires that all derivative work is distributed under the same license. That means that if you use this source code in any other program, you can only distribute that program with the full source code included and licensed under a GPL license.
 
-
-library(tidyverse)
+ library(tidyverse)
 library(gridExtra)
 library(Hmisc)
 library(DT)

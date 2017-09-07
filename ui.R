@@ -95,6 +95,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                             selected = NULL, multiple = TRUE, width="100%"),
                 sliderInput("reps_to_plot", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 3),
                 sliderInput("ncol", "Number of columns", min = 1, max=10, step = 1, value = 3),
+                sliderInput("linesize", "Line width", min = 0.5, max=1.5, step = 0.25, value = 0.5),
                 checkboxInput('plot_mean_archi', "Plot average architecture by genotype", value = T, width = NULL),
                 tags$hr(),
                 img(src='logo.jpg', align = "left", width="100%")
@@ -108,19 +109,43 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                   condition = "input.show_archi_code == true",
                   verbatimTextOutput("archi_code")
                 ),
-                selectInput("to_plot_2", label = "Variable to plot", choices = c("age", "diameter", "order")),
+                selectInput("to_plot_2", label = "Variable to plot", choices = c("diameter" = "diameter1", "order"="order", "depth" = "y1", "geodesic distance"="geodesic")),
                 plotOutput("archi_plot", height = 1000)
           )
        )
     ),
+    tabPanel("archiHomology", id="tab4",icon = icon("barcode"),
+             fluidRow(
+               column(3, 
+                      helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+                      selectInput("genotypes_to_plot_2", label="Genotypes to plot", choices = c("Load datafile"), 
+                                  selected = NULL, multiple = TRUE, width="100%"),
+                      sliderInput("reps_to_plot_2", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 3),
+                      tags$hr(),
+                      img(src='logo.jpg', align = "left", width="100%")
+               ),
+               column(8,
+                      fluidRow(
+                        column(6, h4("Plot the barcodes")),
+                        column(6, checkboxInput('show_barcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
+                      ),                
+                      conditionalPanel(
+                        condition = "show_barcode_code == true",
+                        verbatimTextOutput("barcode_code")
+                      ),
+                      plotOutput("barcode_plot", height = 700)
+               )
+             )
+    ),    
     tabPanel("archiPCA", id="tab3",icon = icon("bullseye"),
       fluidRow(
       column(3, 
              helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
              selectInput("variable_to_pca", label="Variables to include in PCA", choices = c("Load datafile"), 
                          selected = NULL, multiple = TRUE, width="100%"),
-             selectInput("genotypes_to_plot_2", label="Genotypes to plot", choices = c("Load datafile"), 
+             selectInput("genotypes_to_plot_3", label="Genotypes to plot", choices = c("Load datafile"), 
                          selected = NULL, multiple = TRUE, width="100%"),
+             sliderInput("time_to_plot", "Time point to analyse", min = 1, max=10, step = 1, value = 10),
              tags$hr(),
              img(src='logo.jpg', align = "left", width="100%")
       ),
