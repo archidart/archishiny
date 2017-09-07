@@ -33,8 +33,6 @@ library(archiDART)
 library(gridExtra)
 library(ggrepel)
 
-source("www/rsmlToTable.R")
-
 cscale <- c("#ffffcc", "#a1dab4","#41b6c4", "#2c7fb8", "#253494")
 cscale1 <- c("#b30000","#e34a33","#fc8d59","#fdcc8a")
 cscale2 <- c("#f1eef6","#d7b5d8","#df65b0","#dd1c77","#980043")

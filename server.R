@@ -124,6 +124,28 @@ shinyServer(
 
   })
   
+    
+    observeEvent(input$load_code, {
+      text <- 'library(archidart)
+
+path <- "YOUR_PATH_TO_FOLDER"
+
+architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")\n
+
+genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
+architect$genotype <- genotypes
+archi <- rsmlToTable(path)
+
+genotypes <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 1))[]
+rep <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 3))[]
+archi$genotype <- genotypes
+archi$rep <- rep
+archi$age <- as.numeric(archi$age)</code>'
+      showModal(modalDialog(
+        pre(text),
+        easyClose = TRUE      
+        ))
+    })    
   
   output$load_code <- renderText({
 'library(archidart)
@@ -381,6 +403,39 @@ ggplot(archi) +
     pl
   })
   
+  
+  output$barcode_code <- renderText({
+    
+    text <- paste0('
+library(tidyverse)
+
+# Compile the data in a table
+ perhomology <- perhomology(archi, FUN="',input$to_plot_3,'")
+ names  <- names(perhomology)
+ perh <- NULL
+ for(i in c(1:length(perhomology))){
+   temp <- data.frame(perhomology[[i]])
+   temp$y <- c(1:nrow(temp))
+   temp$file <- names[i]
+   perh <- rbind(perh, temp)
+ }
+ genotypes <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 1))[]
+ rep <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 3))[]
+ perh$genotype <- genotypes
+ perh$rep <- rep
+ 
+ ggplot(perh) + 
+   geom_segment(aes(x = birth, y=y, xend=death, yend=y, alpha=0.1)) + 
+   facet_wrap(~genotype) + 
+   theme_classic() +
+   theme(legend.position = "none")+
+   ylab("H0") + 
+   xlab("',input$to_plot_3,' distance (cm)")')
+    
+    text
+  }) 
+  
+  
   output$barcode_boxplot <- renderPlot({
     if(is.null(rs$perh_summary)){return()}
     
@@ -401,6 +456,57 @@ ggplot(archi) +
     
     pl
   })  
+  
+  output$boxcode_code <- renderText({
+    paste0('    
+library(plyr)
+library(tidyverse)
+
+perh_summary <- ddply(perh, .(file, genotype, rep, type), summarise, sumdeath=sum(death),sumbirth = sum(birth),maxdeath = max(death),maxbirth = max(birth),ndeath = length(death),nbirth = length(birth),life = mean(birth-death))
+
+temp <- temp[temp$type == "',input$to_plot_3,'",]
+           
+temp$value <- temp[["',input$to_plot_4,'"]]
+           
+pl <- ggplot(temp, aes(genotype, value, fill=genotype)) + 
+           geom_boxplot() + 
+           theme_classic() +
+           theme(legend.position = "none",
+           text=element_text(size=15),
+           axis.text.x = element_text(angle = 45, hjust = 1))+
+           ylab(',input$to_plot_4,') + 
+           xlab("Genotype")'
+  )
+    
+  })
+  
+  observeEvent(input$boxcode_code, {
+    text <- paste0('library(plyr)
+library(tidyverse)
+
+perh_summary <- ddply(perh, .(file, genotype, rep, type), summarise, sumdeath=sum(death),sumbirth = sum(birth),maxdeath = max(death),maxbirth = max(birth),ndeath = length(death),nbirth = length(birth),life = mean(birth-death))
+
+temp <- temp[temp$type == "',input$to_plot_3,'",]
+
+temp$value <- temp[["',input$to_plot_4,'"]]
+
+pl <- ggplot(temp, aes(genotype, value, fill=genotype)) + 
+  geom_boxplot() + 
+  theme_classic() +
+  theme(legend.position = "none",
+  text=element_text(size=15),
+  axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab(',input$to_plot_4,') + 
+  xlab("Genotype")'
+    )
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE,
+      size='l'
+    ))
+  })  
+  
+  
   
   output$barcode_PCA <- renderPlot({
     if(is.null(rs$distances)){return()}
@@ -424,33 +530,37 @@ ggplot(archi) +
     pl
   })
   
-  
-  output$barcode_code <- renderText({
+  output$barcode_PCA_code <- renderText({
+    paste0('library(tidyverse)
 
-      '# Compile the data in a table
-      perhomology <- perhomology(archi)
-      names  <- names(perhomology)
-      perh <- NULL
-      for(i in c(1:length(perhomology))){
-        temp <- data.frame(perhomology[[i]])
-        temp$y <- c(1:nrow(temp))
-        temp$file <- names[i]
-        perh <- rbind(perh, temp)
-      }
-      genotypes <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 1))[]
-      rep <- unlist(lapply(strsplit(as.character(perh$file), "-"), `[[`, 3))[]
-      perh$genotype <- genotypes
-      perh$rep <- rep
-      
-      
-      ggplot(perh) + 
-        geom_segment(aes(x = birth, y=y, xend=death, yend=y, alpha=0.1)) + 
-        facet_wrap(~genotype) + 
-        theme_classic() +
-        theme(legend.position = "none")+
-        ylab("H0") + 
-        xlab("Geodesic distance (cm)")'
-    })  
+perhomology_1 <- perhomology(archi, FUN="geodesic")
+perhomology_2 <- perhomology(archi, FUN="depth")
+
+dist_1 <- bottleneckdist(perhomology_1)
+dist_2 <- bottleneckdist(perhomology_2)
+ 
+distance <- sqrt(dist_1^2 + dist_2^2)
+distance <- as.data.frame(distance)
+distance$genotypes <- rep(unique(archi$genotype), each=10)
+ 
+distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_to_plot_2,])
+    
+ pca <- prcomp(distance[,-(length(distance))], retx = T, scale=T)  # Make the PCA
+ pca.results <- cbind(genotype=distance$genotypes, data.frame(pca$x)[,])
+
+ vars <- apply(pca$x, 2, var)
+ props <- round((vars / sum(vars) * 100), 1)
+ xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
+ yl <-paste0("Principal Component 2 (",props[2],"%)\n")
+ 
+ ggplot(data = pca.results) +
+   geom_point(aes(PC1, PC2, colour=genotype)) +
+   stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) +
+   theme_bw() +
+   xlab(xl) +
+   ylab(yl)
+')
+  })
   
   
   

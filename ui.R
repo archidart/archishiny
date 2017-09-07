@@ -27,7 +27,7 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(theme = "bootstrap.css",
-
+                  
   # Application title
   navbarPage("archiDART",
     tabPanel("Load data", id="tab1", icon = icon("upload"),
@@ -44,19 +44,21 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                img(src='logo.jpg', align = "left", width="100%")
         ),
         column(7, 
-               fluidRow(
-                 column(6, h4("Overview of the dataset")),
-                 column(6, checkboxInput('show_load_code', "Show me the code to load the data", value = F, width = NULL))
-               ),     
-               conditionalPanel(
-                 condition = "input.show_load_code == true",
-                 verbatimTextOutput("load_code")
-               ),
-               tags$hr(),
+               
+                 h4("Overview of the dataset"),
+                 # column(6, checkboxInput('show_load_code', "Show me the code to load the data", value = F, width = NULL))
+                 # column(6,  actionButton("load_code", "Show modal dialog"))
+                 actionButton("load_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
+                
+               # conditionalPanel(
+               #   condition = "input.show_load_code == true",
+               #   verbatimTextOutput("load_code")
+               # ),
+               # tags$hr(),
                # selectInput("to_plot_1", label = "Variable to plot", choices = c("Load datafile")),
                # plotOutput("distribution_plot"),
                # tags$hr(),
-               helpText("Distribution of the data computed by architect."),
+               # helpText("Distribution of the data computed by architect."),
                tags$hr(),
                DT::dataTableOutput('distribution_data')
         )
@@ -104,7 +106,8 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                 fluidRow(
                   column(6, h4("Plot the architecture")),
                   column(6, checkboxInput('show_archi_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                ),                
+                ),         
+                uiOutput("clip_archi_code"),
                 conditionalPanel(
                   condition = "input.show_archi_code == true",
                   verbatimTextOutput("archi_code")
@@ -130,30 +133,26 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                         column(6, checkboxInput('show_barcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
                       ),                
                       conditionalPanel(
-                        condition = "show_barcode_code == true",
+                        condition = "input.show_barcode_code == true",
                         verbatimTextOutput("barcode_code")
                       ),
                       selectInput("to_plot_3", label = "Variable to plot", choices = c("depth" = "depth", "geodesic distance"="geodesic")),
                       plotOutput("barcode_plot", height = 700)
                ),
               column(3, 
-                     fluidRow(
-                       column(6, h4("Boxplot the barcodes")),
-                       column(6, checkboxInput('show_boxcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                     ),                
-                     conditionalPanel(
-                       condition = "show_boxcode_code == true",
-                       verbatimTextOutput("boxcode_code")
-                     ),                     
+                      h4("Boxplot the barcodes"),
                       selectInput("to_plot_4", label = "Variable to plot", choices = c("Load datafile")),
                       plotOutput("barcode_boxplot", height = 300),
+                     actionButton("boxcode_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
+                     actionButton("boxcode_code_downlaod", label="Download plot", icon=icon("download"),style='padding:4px; font-size:80%'),
+                     tags$hr(),
                      
                      fluidRow(
                        column(6, h4("PCA the barcodes")),
                        column(6, checkboxInput('show_barcode_PCA_code', "Show me the code for this awesome plot", value = F, width = NULL))
                      ),                
                      conditionalPanel(
-                       condition = "show_barcode_PCA_code == true",
+                       condition = "input.show_barcode_PCA_code == true",
                        verbatimTextOutput("boxcode_PCA_code")
                      ),                         
                      plotOutput("barcode_PCA", height = 300) 
