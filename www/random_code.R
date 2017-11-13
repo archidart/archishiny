@@ -60,7 +60,8 @@ dat$rep <- rep
 dat$age <- as.numeric(dat$age)
 
 
-dat1 <- ddply(dat, .(genotype, rep, plant, age), summarise, value = sum(length))
+
+dat1 <- ddply(archi, .(genotype, rep, plant, age), summarise, value = sum(length), value2 = mean(diameter))
 
 
 ggplot(dat1) +  
@@ -96,8 +97,17 @@ for (i in 1:length(RSML)){
 
 
 archi$y_mean <- -round(archi$y1/10)
-temp <- ddply(archi, .(plant, genotype, y_mean), summarise, rld=sum(length))
-ggplot(temp) +
+archi$x_mean <- -round(archi$x1/10)
+
+temp <- ddply(archi, .(genotype, y_mean, x_mean), summarise, rld=sum(length))
+
+ggplot(temp, aes(x_mean, y_mean)) +
+  geom_tile(aes(fill = rld)) + 
+  coord_fixed() + 
+  facet_grid(~genotype) +
+  theme_bw() + 
+  ggsave("~/Desktop/test.png", width=10)
+
   geom_line(aes(y_mean, rld, group=plant), colour="grey") +
   stat_smooth(aes(y_mean, rld, colour=genotype)) +
   facet_grid(~genotype) +

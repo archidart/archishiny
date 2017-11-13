@@ -34,31 +34,13 @@ shinyUI(fluidPage(theme = "bootstrap.css",
       fluidRow(
         column(4,
                h4("archiDART"),
-               helpText("This app show the capabilities of the archiDART package. To do so, we create 70 synthetic root system using the root model ArchiSimple [Pagès et al. 2014]."),
-               helpText("The root architectures are classified into different genotypes (mock, dense and sparse, steep and shallow, slow and fast), to show how archiDART can differentiate them."),
-               #  textInput('path', 'Choose folder with all data files'),
-               #  # fileInput('test_file', 'Choose file with testing data', accept=c('text/comma-separated-values', '.csv')),
-               # checkboxInput('use_example', "Use example data", value = T, width = NULL),
-               # bsButton(inputId = "load_data", type = "action", style="primary", label="Load data",icon("upload")),
+               helpText("This app shows the capabilities of the archiDART package. To do so, we created a library of 70 synthetic root systems using the root architecture model ArchiSimple [Pagès et al. 2014]. The root architectures were classified into seven genotypes (mock, dense, sparse, steep, shallow, slow, and fast). This app will show you how the functions in the archiDART package can be used to differentiate them."),
                tags$hr(),
                img(src='logo.jpg', align = "left", width="100%")
         ),
         column(7, 
-               
-                 h4("Overview of the dataset"),
-                 # column(6, checkboxInput('show_load_code', "Show me the code to load the data", value = F, width = NULL))
-                 # column(6,  actionButton("load_code", "Show modal dialog"))
-                 actionButton("load_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
-                
-               # conditionalPanel(
-               #   condition = "input.show_load_code == true",
-               #   verbatimTextOutput("load_code")
-               # ),
-               # tags$hr(),
-               # selectInput("to_plot_1", label = "Variable to plot", choices = c("Load datafile")),
-               # plotOutput("distribution_plot"),
-               # tags$hr(),
-               # helpText("Distribution of the data computed by architect."),
+               h4("Overview of the dataset"),
+               actionButton("load_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
                tags$hr(),
                DT::dataTableOutput('distribution_data')
         )
@@ -68,7 +50,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
         fluidRow(
           column(3, 
               h4("archiTect"),
-              helpText("The architect function load the data from the different RSML files, store them into a unique data table, then computes aggregated metrics for each root system."),
+              helpText("The architect function loads the data from the different RSML files and computes aggregated metrics describing the global architecture of each root system at each observation date."),
               selectInput("genotypes_to_plot", label="Genotypes to plot", choices = c("Load datafile"), 
                           selected = NULL, multiple = TRUE, width="100%"),
               checkboxInput('plot_mean', "Plot average by genotype", value = T, width = NULL),
@@ -76,23 +58,18 @@ shinyUI(fluidPage(theme = "bootstrap.css",
               img(src='logo.jpg', align = "left", width="80%")
           ),
           column(8,
-                 fluidRow(
-                   column(6, h4("Evolution of root system metrics")),
-                   column(6, checkboxInput('show_time_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                  ),
-                 conditionalPanel(
-                   condition = "input.show_time_code == true",
-                   verbatimTextOutput("time_code")
-                  ),
-                 selectInput("to_plot", label = "Variable to plot", choices = c("Load datafile")),
-                 plotOutput("time_plot")
+                h4("Evolution of root system metrics"),
+                actionButton("time_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
+                tags$hr(),
+                selectInput("to_plot", label = "Variable to plot", choices = c("Load datafile")),
+                plotOutput("time_plot")
           )
         )
     ),
     tabPanel("archiDraw", id="tab3",icon = icon("pencil"),
        fluidRow(
          column(3, 
-                helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+                helpText("The archidraw function loads the data from the different RSML files and plots each root system using the basic graphic functions of R. With archiDART version 3.0, it is now possible to use other data visualization tools, such as the functions of the ggplot2 package."),
                 selectInput("genotypes_to_plot_1", label="Genotypes to plot", choices = c("Load datafile"), 
                             selected = NULL, multiple = TRUE, width="100%"),
                 sliderInput("reps_to_plot", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 3),
@@ -105,22 +82,29 @@ shinyUI(fluidPage(theme = "bootstrap.css",
          column(8,
                 fluidRow(
                   column(6, h4("Plot the architecture")),
-                  column(6, checkboxInput('show_archi_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                ),         
-                uiOutput("clip_archi_code"),
-                conditionalPanel(
-                  condition = "input.show_archi_code == true",
-                  verbatimTextOutput("archi_code")
+                  column(6, checkboxInput('show_distri', "Hey, show me the histograms instead!", value = F, width = NULL))
                 ),
-                selectInput("to_plot_2", label = "Variable to plot", choices = c("diameter" = "diameter1", "order"="order", "depth" = "y1", "geodesic distance"="geodesic")),
-                plotOutput("archi_plot", height = 1000)
+                conditionalPanel(
+                  condition = "input.show_distri == false",
+                  actionButton("archi_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
+                  tags$hr(),
+                  selectInput("to_plot_2", label = "Variable to plot", choices = c("diameter" = "diameter1", "growth"="growth", "orientation"="orientation","order"="order", "depth" = "y1", "geodesic distance"="geodesic", "magnitude"="magnitude", "path length"="pathlength")),
+                  plotOutput("archi_plot", height = 1000)
+                ),
+                conditionalPanel(
+                  condition = "input.show_distri == true",
+                  actionButton("distri_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+                  tags$hr(),
+                  selectInput("to_plot_distri", label = "Variable to plot", choices = c("diameter" = "diameter", "growth"="growth", "orientation"="angle", "length"="length", "depth"="depth", "geodesic distance"="geodesic")),
+                  plotOutput("distri_plot", height = 600)
+                )
           )
        )
     ),
     tabPanel("archiHomology", id="tab4",icon = icon("barcode"),
              fluidRow(
                column(3, 
-                      helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+                      helpText("In archiDART version 3.0, a set of new functions were developed to analyse and compare the topology of plant root systems using persistent homology. Here, we want to show you how these functions can be used to compute persistence barcodes and compare the topology of root systems using non-metric multidimensional scaling (NMDS) on a pairwise bottleneck distance matrix."),
                       selectInput("genotypes_to_plot_2", label="Genotypes to plot", choices = c("Load datafile"), 
                                   selected = NULL, multiple = TRUE, width="100%"),
                       sliderInput("reps_to_plot_2", "Number of repetitions to plot", min = 1, max=10, step = 1, value = 3),
@@ -128,33 +112,23 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                       img(src='logo.jpg', align = "left", width="100%")
                ),
                column(5,
-                      fluidRow(
-                        column(6, h4("Plot the barcodes")),
-                        column(6, checkboxInput('show_barcode_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                      ),                
-                      conditionalPanel(
-                        condition = "input.show_barcode_code == true",
-                        verbatimTextOutput("barcode_code")
-                      ),
+                      h4("Plot the barcodes"),
+                      actionButton("barcode_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+                      tags$hr(),
                       selectInput("to_plot_3", label = "Variable to plot", choices = c("depth" = "depth", "geodesic distance"="geodesic")),
                       plotOutput("barcode_plot", height = 700)
                ),
               column(3, 
-                      h4("Boxplot the barcodes"),
-                      selectInput("to_plot_4", label = "Variable to plot", choices = c("Load datafile")),
-                      plotOutput("barcode_boxplot", height = 300),
-                     actionButton("boxcode_code", label="Show me the code", icon=icon("eye"),style='padding:4px; font-size:80%'),
-                     actionButton("boxcode_code_downlaod", label="Download plot", icon=icon("download"),style='padding:4px; font-size:80%'),
+                     h4("Boxplot the barcodes"),
+                     actionButton("boxcode_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+                     tags$hr(), 
+                     selectInput("to_plot_4", label = "Variable to plot", choices = c("Load datafile")),
+                     plotOutput("barcode_boxplot", height = 300),
                      tags$hr(),
                      
-                     fluidRow(
-                       column(6, h4("PCA the barcodes")),
-                       column(6, checkboxInput('show_barcode_PCA_code', "Show me the code for this awesome plot", value = F, width = NULL))
-                     ),                
-                     conditionalPanel(
-                       condition = "input.show_barcode_PCA_code == true",
-                       verbatimTextOutput("boxcode_PCA_code")
-                     ),                         
+                     h4("PCA the barcodes"),
+                     actionButton("barcode_PCA_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+                     tags$hr(), 
                      plotOutput("barcode_PCA", height = 300) 
                )
              )
@@ -162,7 +136,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
     tabPanel("archiPCA", id="tab3",icon = icon("bullseye"),
       fluidRow(
       column(3, 
-             helpText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+             helpText("The archiPCA panel of this app was developed to show you how multivariate statistical analysis techniques, such as principal component analysis (PCA), can be used to differentiate root systems based on the results of the architect function."),
              selectInput("variable_to_pca", label="Variables to include in PCA", choices = c("Load datafile"), 
                          selected = NULL, multiple = TRUE, width="100%"),
              selectInput("genotypes_to_plot_3", label="Genotypes to plot", choices = c("Load datafile"), 
@@ -172,26 +146,19 @@ shinyUI(fluidPage(theme = "bootstrap.css",
              img(src='logo.jpg', align = "left", width="100%")
       ),
       column(7,
-             fluidRow(
-               column(6, h4("Plot the principal component analysis")),
-               column(6, checkboxInput('show_pca_code', "Show me the code for this awesome plot", value = F, width = NULL))
-             ),                
-             conditionalPanel(
-               condition = "input.show_pca_code == true",
-               verbatimTextOutput("pca_code")
-             ),
+             h4("Plot the principal component analysis"),
+             actionButton("pca_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+             tags$hr(),
              plotOutput("pca_plot", height = 800)
       )
     )      
-    ), 
-    tabPanel("archiGrow", id="tab3",icon = icon("hourglass-half")
     ), 
     tabPanel("About", id="tab4", icon=icon("plus-circle"),
       fluidRow(
         column(3),
         column(6,
             h4("What is archiDART"),
-            helpText("TODO: \n- better name for variables \n-load data only once and store eveyrthing in dataframe \n- plot woith ggplot"),
+            helpText("archiDART is an R package that was developed for the automated analysis of plant root system architectures using Data Analysis of Root Tracings (DART) and Root System Markup Language (RSML) files. This R package is the result of an international collaboration between the Plant Biology Unit of Gembloux Agro-Bio Tech (University of Liège, Belgium), the Earth and Life Institute of the Catholic University of Louvain-la-Neuve (Belgium), the Ecosystem Functioning and Services lab of the Leuphana University Lüneburg (Germany), the Forschungszentrum Jülich GmbH (IBG-3, Germany), the French National Institute for Agricultural Research (Centre PACA UR 1115 PSH, France), and the Donald Danforth Plant Science Center (USA). For more information about archiDART, please contact its principal maintainer (Benjamin.Delory@leuphana.de)."),
             tags$hr(),
             h4("How to use archiDART"),
             helpText(""),

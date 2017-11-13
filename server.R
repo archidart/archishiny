@@ -28,6 +28,8 @@ shinyServer(
       load("www/perh_summary.RData")
       load("www/perhomology.RData")
       load("www/distances.RData")
+      load("www/histogram.RData")
+      rs$histogram <- histogram
       rs$architect <- architect
       rs$genotypes <- genotypes
       rs$archi <- archi
@@ -35,17 +37,20 @@ shinyServer(
       rs$distances <- distance
       rs$perh_summary <- perh_summary
       rs$perhomology <- perhomology
+      
+      rs$names <- read_csv("www/names.csv")
 
       
       ## Preprocess the data manaully
       if(1==2){
-           path <- "../rsmls/"
-          architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")
+          path <- "../rsmls/"
+          architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age", fitter=T)
           genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
           architect$genotype <- genotypes
           save(architect, file="www/architect.RData")
           save(genotypes, file="www/genotypes.RData")
-          archi <- rsmlToTable(path)
+          
+          archi <- rsmlToTable(path, fitter=T)
           genotypes <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 1))[]
           rep <- unlist(lapply(strsplit(as.character(archi$file), "-"), `[[`, 3))[]
           archi$genotype <- genotypes
@@ -53,6 +58,74 @@ shinyServer(
           archi$age <- as.numeric(archi$time)
           save(archi, file="www/archi.RData")
       
+          # Compute the angle data to make the histgram
+          archi$rangle <- round(archi$orientation)
+          hist1 <- ddply(archi, .(time, genotype, file, rep, root, rangle), summarize, n=ceiling(sum(length/10)))
+          angle <- ddply(hist1,.(time, genotype, file, rep, root), summarize, value = rep(rangle,n))
+          
+          # Compute the diameter data to make the histgram
+          archi$rdiam <- round(archi$diameter2)
+          hist1 <- ddply(archi, .(time, genotype, file, rep, root, rdiam), summarize, n=ceiling(sum(length/10)))
+          diameter <- ddply(hist1,.(time, genotype, file, rep, root), summarize, value = rep(rdiam,n))
+          
+          # Compute the growth data to make the histgram
+          archi$rgrowth <- round(archi$growth)
+          hist1 <- ddply(archi, .(time, genotype, file, rep, root, rgrowth), plyr::summarize, n=ceiling(sum(length/10)))
+          growth <- ddply(hist1,.(time, genotype, file, rep, root), plyr::summarize, value = rep(rgrowth,n))
+
+          # Compute the depth data to make the histgram
+          archi$rdepth <- round(archi$y2)
+          hist1 <- ddply(archi, .(time, genotype, file, rep, root, rdepth), plyr::summarize, n=ceiling(sum(length/10)))
+          depth <- ddply(hist1,.(time, genotype, file, rep, root), plyr::summarize, value = rep(rdepth,n))        
+            
+          # Compute the geodesic data to make the histgram
+          archi$rgeo <- round(archi$geodesic)
+          hist1 <- ddply(archi, .(time, genotype, file, root, rep, rgeo), summarize, n=ceiling(sum(length/10)))
+          geodesic <- ddply(hist1,.(time, genotype, file, rep, root), summarize, value = rep(rgeo,n)) 
+          
+          # Compute the magnitude data to make the histgram
+          hist1 <- ddply(archi, .(time, genotype, file, root, rep, magnitude), summarize, n=ceiling(sum(length/10)))
+          magnitude <- ddply(hist1,.(time, genotype, file, rep, root), summarize, value = rep(magnitude,n)) 
+          
+          # Compute the pathlength data to make the histgram
+          hist1 <- ddply(archi, .(time, genotype, file, root, rep, pathlength), summarize, n=ceiling(sum(length/10)))
+          pathlength <- ddply(hist1,.(time, genotype, file, rep, root), summarize, value = rep(pathlength,n)) 
+          
+          # Compute the length data to make the histgram
+          length <- ddply(archi, .(file, plant, root, genotype), summarise, value=sum(length))
+          
+          histogram = list("angle"=angle, 
+                           "diameter"=diameter, 
+                           "growth"=growth, 
+                           "length"=length,
+                           "depth"=depth,
+                           "geodesic"=geodesic,
+                           "magnitude"=magnitude,
+                           "pathlength"=pathlength)
+          
+          save(histogram, file="www/histogram.RData")
+          
+          
+          ggplot(histogram$angle, aes(value, colour=genotype, group=file)) + 
+            geom_density() +
+            theme_classic() + 
+            theme(legend.position = "null") + 
+            facet_wrap(~genotype, ncol=3)
+          
+          ggplot(histogram, aes(angle, colour=genotype)) + 
+            geom_density() +
+            theme_classic()
+          
+          
+          
+          ggplot(root_data, aes(length, colour=genotype, group=file)) + 
+            geom_density(alpha=0.5) + 
+            theme_classic()
+          
+          ggplot(root_data, aes(length, colour=genotype)) + 
+            geom_density()
+          
+          
           perhomology <- perhomology(archi, FUN="geodesic")
           perhomology2 <- perhomology(archi, FUN="depth")
           dist_1 <- bottleneckdist(perhomology)
@@ -93,7 +166,8 @@ shinyServer(
           #Compute new distance matrix
           # distance<-sqrt(dist_1^2+dist_2^2)
 
-          pca <- prcomp(distance, retx = T, scale=T)  # Make the PCA
+          pca <- prcomp(distance[,-ncol(distance)], retx = T, scale=T)  # Make the PCA
+          genotypes <- unlist(lapply(strsplit(as.character(rownames(pca$rotation)), "-"), `[[`, 1))[]
           pca.results <- cbind(genotype=genotypes, data.frame(pca$x)[,])
       
           vars <- apply(pca$x, 2, var)
@@ -115,10 +189,8 @@ shinyServer(
                           ndeath = length(death),
                           nbirth = length(birth),
                           life = mean(birth-death))
-            save(perh_summary, file="www/perh_summary.RData")
-            ggplot(temp, aes(genotype, nbirth, fill=genotype)) +
-              geom_boxplot() +
-              theme_classic()
+          save(perh_summary, file="www/perh_summary.RData")
+
       }
       
 
@@ -140,28 +212,14 @@ genotypes <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 1))[]
 rep <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 3))[]
 archi$genotype <- genotypes
 archi$rep <- rep
-archi$age <- as.numeric(archi$age)</code>'
+archi$age <- as.numeric(archi$age)'
       showModal(modalDialog(
         pre(text),
         easyClose = TRUE      
         ))
     })    
-  
-  output$load_code <- renderText({
-'library(archidart)
 
-path <- "YOUR_PATH_TO_FOLDER"
-architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age")
-genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
-architect$genotype <- genotypes
-
-archi <- rsmlToTable(path)
-genotypes <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 1))[]
-rep <- unlist(lapply(strsplit(as.character(archi$plant), "-"), `[[`, 3))[]
-archi$genotype <- genotypes
-archi$rep <- rep
-archi$age <- as.numeric(archi$age)'
-    })
+    
   ############################################################
   ### UI commands
   ############################################################
@@ -180,7 +238,8 @@ archi$age <- as.numeric(archi$age)'
   
   observe({
     if(is.null(rs$architect)){return()}
-    vars <- colnames(rs$architect)[-c(1,2,ncol(rs$architect))]
+    print(names$value)
+    vars <- rs$names$value#colnames(rs$architect)[-c(1,2,ncol(rs$architect))]
     ct_options <- list()
     sel <- input$to_plot
     for(ct in vars) ct_options[[ct]] <- ct
@@ -292,9 +351,9 @@ archi$age <- as.numeric(archi$age)'
   
   output$time_plot <- renderPlot({
     if(is.null(rs$architect)){return()}
-    
+    val <- rs$names$name[rs$names$value == input$to_plot]
     temp <- rs$architect[rs$architect$genotype %in% input$genotypes_to_plot,]
-    temp$value <- temp[[input$to_plot]]
+    temp$value <- temp[[val]]
     
     pl <- ggplot(temp) +  
       xlab("Time [days]") + 
@@ -313,22 +372,27 @@ archi$age <- as.numeric(archi$age)'
     
   }) 
   
-  output$time_code <- renderText({
+  
+  observeEvent(input$time_code, {
     text <- paste0('library(ggplot2)
 ggplot(data = architect) +  
-    xlab("Time [days]") + 
-    ylab("',input$to_plot,'") + 
-    ggtitle("',input$to_plot,'") + 
-    theme_classic() +
-    ')    
+                   xlab("Time [days]") + 
+                   ylab("',input$to_plot,'") + 
+                   ggtitle("',input$to_plot,'") + 
+                   theme_classic() +
+                   ')    
     
     if(input$plot_mean){
       text <- paste0(text, 'stat_smooth(aes(Time,',input$to_plot,', colour = genotype))')
     }else{
       text <- paste0(text, 'geom_line(aes(Time,',input$to_plot,', colour = genotype, group = FileName))')
     }
-    text
-  })
+    
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE      
+    ))
+  })   
   
   
   
@@ -361,8 +425,9 @@ ggplot(data = architect) +
     pl
   })
   
-  output$archi_code <- renderText({
+  observeEvent(input$archi_code, {
     if(!input$plot_mean_archi){
+    
       text <- paste0('library(ggplot2)
 ggplot(data = archi) +  
   geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour = ',input$to_plot_2,')) + 
@@ -370,16 +435,77 @@ ggplot(data = archi) +
   theme_bw() + 
   facet_wrap(~plant, ncol=',input$ncol,') +
   theme_classic()')    
-    }else{
-      text <- paste0('library(ggplot2)
+  }else{
+    text <- paste0('library(ggplot2)
 ggplot(archi) + 
   geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour = ',input$to_plot_2,'), size = 0.5, alpha = 0.5) + 
   coord_fixed() + 
   theme_bw() + 
   facet_wrap(~genotype, ncol=',input$ncol,')')
-    }
-    text
+  }
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE
+    ))
   })
+  
+  
+  
+  output$distri_plot <- renderPlot({
+    if(is.null(rs$archi)){return()}
+    
+    temp <- rs$histogram[[input$to_plot_distri]] %>%
+      filter(genotype %in% input$genotypes_to_plot_1) %>%
+      filter(as.numeric(rep) <= input$reps_to_plot)
+
+    if(input$plot_mean_archi){
+      pl <- ggplot(temp, aes(x=value, colour=genotype, group=file)) + 
+        geom_density() +
+        theme_classic() + 
+        theme(legend.position = "null") + 
+        facet_wrap(~genotype, ncol=input$ncol)      
+    }else{
+      pl <- ggplot(temp, aes(x=value, colour=genotype)) + 
+        geom_density() +
+        theme_classic()
+    }
+    
+    pl
+  })
+  
+  observeEvent(input$distri_code, {
+    var <- input$to_plot_distri
+    if(var == "depth") var <- "y2"
+    text <- paste0('library(ggplot2)
+library(plyr)
+# Compute the magnitude data to make the histgram
+histogram <- archi %>% 
+  mutate(value = round(',var,')) %>%
+  ddply(.(time, genotype, file, rep, root, rdepth), plyr::summarize, n=ceiling(sum(length/10))) %>%
+  ddply(.(time, genotype, file, rep, root), plyr::summarize, value = rep(rdepth,n)) %>%
+  filter(genotype %in% ',input$genotypes_to_plot_1,') %>%
+  filter(as.numeric(rep) <= ',input$reps_to_plot,')')
+
+    if(input$plot_mean_archi){
+      text <- paste0(text, '
+pl <- ggplot(histogram, aes(x=value, colour=genotype, group=file)) + 
+        geom_density() +
+        theme_classic() + 
+        theme(legend.position = "null") + 
+        facet_wrap(~genotype, ncol=',input$ncol,')')      
+    }else{
+      text <- paste0(text, "
+pl <- ggplot(histogram, aes(x=value, colour=genotype)) + 
+        geom_density() +
+        theme_classic()")
+    }
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE      
+    ))
+  })  
+  
+
 
   # archi plot
   output$barcode_plot <- renderPlot({
@@ -404,7 +530,7 @@ ggplot(archi) +
   })
   
   
-  output$barcode_code <- renderText({
+  observeEvent(input$barcode_code, {
     
     text <- paste0('
 library(tidyverse)
@@ -432,8 +558,12 @@ library(tidyverse)
    ylab("H0") + 
    xlab("',input$to_plot_3,' distance (cm)")')
     
-    text
-  }) 
+  showModal(modalDialog(
+    pre(text),
+    easyClose = TRUE      
+  ))
+  })  
+  
   
   
   output$barcode_boxplot <- renderPlot({
@@ -457,8 +587,8 @@ library(tidyverse)
     pl
   })  
   
-  output$boxcode_code <- renderText({
-    paste0('    
+  observeEvent(input$boxcode_code, {
+    text <- paste0('    
 library(plyr)
 library(tidyverse)
 
@@ -477,34 +607,13 @@ pl <- ggplot(temp, aes(genotype, value, fill=genotype)) +
            ylab(',input$to_plot_4,') + 
            xlab("Genotype")'
   )
-    
-  })
-  
-  observeEvent(input$boxcode_code, {
-    text <- paste0('library(plyr)
-library(tidyverse)
-
-perh_summary <- ddply(perh, .(file, genotype, rep, type), summarise, sumdeath=sum(death),sumbirth = sum(birth),maxdeath = max(death),maxbirth = max(birth),ndeath = length(death),nbirth = length(birth),life = mean(birth-death))
-
-temp <- temp[temp$type == "',input$to_plot_3,'",]
-
-temp$value <- temp[["',input$to_plot_4,'"]]
-
-pl <- ggplot(temp, aes(genotype, value, fill=genotype)) + 
-  geom_boxplot() + 
-  theme_classic() +
-  theme(legend.position = "none",
-  text=element_text(size=15),
-  axis.text.x = element_text(angle = 45, hjust = 1))+
-  ylab(',input$to_plot_4,') + 
-  xlab("Genotype")'
-    )
-    showModal(modalDialog(
-      pre(text),
-      easyClose = TRUE,
-      size='l'
-    ))
+  showModal(modalDialog(
+    pre(text),
+    easyClose = TRUE      
+  ))
   })  
+  
+  
   
   
   
@@ -530,8 +639,10 @@ pl <- ggplot(temp, aes(genotype, value, fill=genotype)) +
     pl
   })
   
-  output$barcode_PCA_code <- renderText({
-    paste0('library(tidyverse)
+  
+  
+  observeEvent(input$barcode_PCA_code, {
+    text <- paste0('library(tidyverse)
 
 perhomology_1 <- perhomology(archi, FUN="geodesic")
 perhomology_2 <- perhomology(archi, FUN="depth")
@@ -560,7 +671,11 @@ distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_
    xlab(xl) +
    ylab(yl)
 ')
-  })
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE      
+    ))
+  }) 
   
   
   
@@ -610,9 +725,10 @@ distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_
       
   })
   
-  output$pca_code <- renderText({
-vars <- paste(input$variable_to_pca,collapse=",")
-paste0(
+  
+  observeEvent(input$pca_code, {
+    vars <- paste(input$variable_to_pca,collapse=",")
+    text <- paste0(
 'library(gridExtra)
 library(ggrepel)
 library(ggplot2)
@@ -649,7 +765,11 @@ pl2 <- ggplot(data=z2, aes(0, 0, xend=PC1, yend=PC2)) +
 
 pl <- grid.arrange(pl1, pl2, ncol=1)' 
 )
-  })
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE      
+    ))
+  }) 
   
   ############################################################
   ### TABLE
