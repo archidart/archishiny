@@ -79,7 +79,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                 tags$hr(),
                 img(src='logo.jpg', align = "left", width="100%")
          ),
-         column(8,
+         column(5,
                 fluidRow(
                   column(6, h4("Plot the architecture")),
                   column(6, checkboxInput('show_distri', "Hey, show me the histograms instead!", value = F, width = NULL))
@@ -95,10 +95,17 @@ shinyUI(fluidPage(theme = "bootstrap.css",
                   condition = "input.show_distri == true",
                   actionButton("distri_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
                   tags$hr(),
-                  selectInput("to_plot_distri", label = "Variable to plot", choices = c("diameter" = "diameter", "growth"="growth", "orientation"="angle", "length"="length", "depth"="depth", "geodesic distance"="geodesic")),
+                  selectInput("to_plot_distri", label = "Variable to plot", choices = c("diameter" = "diameter", "growth"="growth", "orientation"="angle", "length"="length", "depth"="depth", "geodesic distance"="geodesic", "magnitude"="magnitude", "path length"="pathlength")),
                   plotOutput("distri_plot", height = 600)
                 )
-          )
+          ),
+         column(3, 
+                h4("Boxplot the architectures"),
+                actionButton("boxplot_archi_code", label="Show me the code", icon=icon("eye"), style='padding:4px; font-size:80%; color-background="#62bfad'),
+                tags$hr(), 
+                selectInput("to_plot_2_bis", label = "Variable to plot", choices = c("Load datafile")),
+                plotOutput("archi_boxplot", height = 300)
+         )
        )
     ),
     tabPanel("archiHomology", id="tab4",icon = icon("barcode"),
@@ -159,6 +166,7 @@ shinyUI(fluidPage(theme = "bootstrap.css",
         column(6,
             h4("What is archiDART"),
             helpText("archiDART is an R package that was developed for the automated analysis of plant root system architectures using Data Analysis of Root Tracings (DART) and Root System Markup Language (RSML) files. This R package is the result of an international collaboration between the Plant Biology Unit of Gembloux Agro-Bio Tech (University of Liège, Belgium), the Earth and Life Institute of the Catholic University of Louvain-la-Neuve (Belgium), the Ecosystem Functioning and Services lab of the Leuphana University Lüneburg (Germany), the Forschungszentrum Jülich GmbH (IBG-3, Germany), the French National Institute for Agricultural Research (Centre PACA UR 1115 PSH, France), and the Donald Danforth Plant Science Center (USA). For more information about archiDART, please contact its principal maintainer (Benjamin.Delory@leuphana.de)."),
+            tags$hr(),
             tags$hr(),
             h4("How to use archiDART"),
             helpText(""),

@@ -26,6 +26,7 @@ shinyServer(
       load("www/genotypes.RData")
       load("www/perh.RData")
       load("www/perh_summary.RData")
+      load("www/archi_summary.RData")
       load("www/perhomology.RData")
       load("www/distances.RData")
       load("www/histogram.RData")
@@ -36,6 +37,7 @@ shinyServer(
       rs$perh <- perh
       rs$distances <- distance
       rs$perh_summary <- perh_summary
+      rs$archi_summary <- archi_summary
       rs$perhomology <- perhomology
       
       rs$names <- read_csv("www/names.csv")
@@ -128,6 +130,7 @@ shinyServer(
           
           perhomology <- perhomology(archi, FUN="geodesic")
           perhomology2 <- perhomology(archi, FUN="depth")
+          # perhomology3 <- perhomology(archi, FUN="magnitude")
           dist_1 <- bottleneckdist(perhomology)
           dist_2 <- bottleneckdist(perhomology2)
       
@@ -190,6 +193,14 @@ shinyServer(
                           nbirth = length(birth),
                           life = mean(birth-death))
           save(perh_summary, file="www/perh_summary.RData")
+          
+          archi_summary <- ddply(archi, .(file, genotype, rep), summarise, 
+                                 n_root=length(x1),
+                                 depth = max(y1),
+                                 tot_length = sum(length),
+                                 magnitude = max(magnitude),
+                                 path_length = max(pathlength))
+          save(archi_summary, file="www/archi_summary.RData")          
 
       }
       
@@ -238,7 +249,6 @@ archi$age <- as.numeric(archi$age)'
   
   observe({
     if(is.null(rs$architect)){return()}
-    print(names$value)
     vars <- rs$names$value#colnames(rs$architect)[-c(1,2,ncol(rs$architect))]
     ct_options <- list()
     sel <- input$to_plot
@@ -258,6 +268,17 @@ archi$age <- as.numeric(archi$age)'
     # cts  <- c("tot_root_length","n_laterals","tot_lat_length")
     updateSelectInput(session, "to_plot_4", choices = ct_options, selected=sel) 
   })
+  
+  observe({
+    if(is.null(rs$archi_summary)){return()}
+    vars <- colnames(rs$archi_summary)[-c(1:3)]
+    ct_options <- list()
+    sel <- input$to_plot_2_bis
+    for(ct in vars) ct_options[[ct]] <- ct
+    if(length(sel) == 0 | sel == "") sel = ct_options[1]
+    # cts  <- c("tot_root_length","n_laterals","tot_lat_length")
+    updateSelectInput(session, "to_plot_2_bis", choices = ct_options, selected=sel) 
+  })  
   
   observe({
     if(is.null(rs$architect)){return()}
@@ -314,7 +335,7 @@ archi$age <- as.numeric(archi$age)'
   
   observe({
     if(is.null(rs$architect)){return()}
-    vars <- colnames(rs$architect)[-c(1,2,ncol(rs$architect))]
+    vars <- rs$names$value#colnames(rs$architect)[-c(1,2,ncol(rs$architect))]
     ct_options <- list()
     sel <- input$variable_to_pca
     for(ct in vars) ct_options[[ct]] <- ct
@@ -403,23 +424,40 @@ ggplot(data = architect) +
     temp <- rs$archi[rs$archi$genotype %in% input$genotypes_to_plot_1,]
     temp <- temp[as.numeric(temp$rep) <= input$reps_to_plot,]
     temp$value <- temp[[input$to_plot_2]]
+    # 
+    # temp <- archi %>%
+    #   filter(rep < 4)
+    # temp$value <- temp$geodesic
+    # 
+    # ggplot(temp) + 
+    #   geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour=value), size=0.5, alpha=0.8) + 
+    #   coord_fixed() + 
+    #   theme_bw() + 
+    #   scale_colour_gradientn(colours=cscale3)+
+    #   #scale_colour_gradientn(colours = terrain.colors(10)) + 
+    #   facet_wrap(~genotype, ncol=3)
+    
     
     if(!input$plot_mean_archi){
       pl <- ggplot(temp) + 
           geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour=value), size=input$linesize) + 
           coord_fixed() + 
           theme_bw() + 
-          facet_wrap(~file, ncol=input$ncol) + 
-          scale_colour_gradientn(colours=cscale,
-                               limits = input$psirange)
+          scale_colour_gradientn(colours=cscale3,
+                               limits = input$psirange) + 
+          facet_wrap(~file, ncol=input$ncol)  +
+        theme(legend.position="bottom")
+         
     }else{
       pl <- ggplot(temp) + 
-        geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour=value), size=input$linesize, alpha=0.5) + 
+        geom_segment(aes(x = x1, y = -y1, xend = x2, yend = -y2, colour=value), size=input$linesize, alpha=0.8) + 
         coord_fixed() + 
         theme_bw() + 
-        scale_colour_gradientn(colours=cscale,
+        scale_colour_gradientn(colours=cscale3,
                                limits = input$psirange)+
-        facet_wrap(~genotype, ncol=input$ncol)
+        #scale_colour_gradientn(colours = terrain.colors(10)) + 
+        facet_wrap(~genotype, ncol=input$ncol) +
+        theme(legend.position="top")
     }
     
     pl
@@ -504,6 +542,58 @@ pl <- ggplot(histogram, aes(x=value, colour=genotype)) +
       easyClose = TRUE      
     ))
   })  
+  
+  
+  output$archi_boxplot <- renderPlot({
+    if(is.null(rs$perh_summary)){return()}
+    
+    temp <- rs$archi_summary %>%
+      filter(genotype %in% input$genotypes_to_plot_1)
+    
+    temp$value <- temp[[input$to_plot_2_bis]]
+    
+    pl <- ggplot(temp, aes(genotype, value, fill=genotype)) + 
+      geom_boxplot() + 
+      theme_classic() +
+      theme(legend.position = "none",
+            text=element_text(size=15),
+            axis.text.x = element_text(angle = 45, hjust = 1))+
+      ylab(input$to_plot_2_bis) + 
+      xlab("Genotype")
+    
+    
+    pl
+  })  
+  
+  observeEvent(input$boxplot_archi_code, {
+    text <- paste0('library(plyr)
+library(tidyverse)
+                   
+archi_summary <- ddply(archi, .(file, genotype, rep, type), summarise, 
+                   n_root=length(x1),
+                   depth = max(y1),
+                   tot_length = sum(length),
+                   magnitude = max(magnitude),
+                   path_length = max(pathlength))
+                   
+archi_summary$value <- temp[["',input$to_plot_2_bis,'"]]
+                   
+pl <- ggplot(archi_summary, aes(genotype, value, fill=genotype)) + 
+          geom_boxplot() + 
+          theme_classic() +
+          theme(legend.position = "none",
+          text=element_text(size=15),
+          axis.text.x = element_text(angle = 45, hjust = 1))+
+          ylab(',input$to_plot_2_bis,') + 
+          xlab("Genotype")'
+    )
+    showModal(modalDialog(
+      pre(text),
+      easyClose = TRUE      
+    ))
+  })  
+  
+  
   
 
 
@@ -619,22 +709,19 @@ pl <- ggplot(temp, aes(genotype, value, fill=genotype)) +
   
   output$barcode_PCA <- renderPlot({
     if(is.null(rs$distances)){return()}
+    
     distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_to_plot_2,])
+    genotype <- distance$genotype
     
-    pca <- prcomp(distance[,-(length(distance))], retx = T, scale=T)  # Make the PCA
-    pca.results <- cbind(genotype=distance$genotypes, data.frame(pca$x)[,])
-    
-    vars <- apply(pca$x, 2, var)
-    props <- round((vars / sum(vars) * 100), 1)
-    xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
-    yl <-paste0("Principal Component 2 (",props[2],"%)\n")
-    
-    pl <- ggplot(data = pca.results) +
-      geom_point(aes(PC1, PC2, colour=genotype)) +
-      stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) +
+    mds <- metaMDS(as.dist(distance[,-(length(distance))]), trymax=200, autotransform=FALSE, wascores = FALSE, noshare=FALSE, expand=FALSE)
+    data <- data.frame(mds$points, genotype=genotype)    
+
+    pl <- ggplot(data) +
+      geom_point(aes(MDS1, MDS2, colour=genotype)) +
+      stat_ellipse(aes(MDS1, MDS2, colour=genotype), level = 0.9, size=1) +
       theme_bw() +
-      xlab(xl) +
-      ylab(yl)
+      xlab("NMDS-1") +
+      ylab("NMDS-2")
     
     pl
   })
@@ -643,6 +730,7 @@ pl <- ggplot(temp, aes(genotype, value, fill=genotype)) +
   
   observeEvent(input$barcode_PCA_code, {
     text <- paste0('library(tidyverse)
+library(vegan)
 
 perhomology_1 <- perhomology(archi, FUN="geodesic")
 perhomology_2 <- perhomology(archi, FUN="depth")
@@ -652,24 +740,18 @@ dist_2 <- bottleneckdist(perhomology_2)
  
 distance <- sqrt(dist_1^2 + dist_2^2)
 distance <- as.data.frame(distance)
-distance$genotypes <- rep(unique(archi$genotype), each=10)
- 
-distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_to_plot_2,])
-    
- pca <- prcomp(distance[,-(length(distance))], retx = T, scale=T)  # Make the PCA
- pca.results <- cbind(genotype=distance$genotypes, data.frame(pca$x)[,])
 
- vars <- apply(pca$x, 2, var)
- props <- round((vars / sum(vars) * 100), 1)
- xl <- paste0("\nPrincipal Component 1 (",props[1],"%)")
- yl <-paste0("Principal Component 2 (",props[2],"%)\n")
- 
- ggplot(data = pca.results) +
-   geom_point(aes(PC1, PC2, colour=genotype)) +
-   stat_ellipse(aes(PC1, PC2, colour=genotype), level = 0.9, size=1) +
-   theme_bw() +
-   xlab(xl) +
-   ylab(yl)
+mds <- metaMDS(as.dist(distance[,-(length(distance))]), trymax=200, autotransform=FALSE, wascores = FALSE, noshare=FALSE, expand=FALSE)
+genotypes <- c(rep("dense", 10),rep("fast", 10),rep("mock", 10),rep("shallow", 10),rep("slow", 10),rep("sparse", 10),rep("steep", 10))
+data <- data.frame(mds$points, genotype=genotypes)    
+                   
+
+ggplot(data) +
+      geom_point(aes(MDS1, MDS2, colour=genotype)) +
+      stat_ellipse(aes(MDS1, MDS2, colour=genotype), level = 0.9, size=1) +
+      theme_bw() +
+      xlab("NMDS-1") +
+      ylab("NMDS-2")
 ')
     showModal(modalDialog(
       pre(text),
@@ -689,12 +771,14 @@ distance<-as.data.frame(rs$distances[rs$distances$genotype %in% input$genotypes_
     temp <- temp[temp$Time == input$time_to_plot,]
     plants <- temp$FileName
     genotypes <- temp$genotype
-    temp <- temp[,input$variable_to_pca]
+    vars <- rs$names$name[rs$names$value %in% input$variable_to_pca]
+    temp <- temp[,vars]
     remove <- NULL
     for(i in c(1:ncol(temp))){
       if(sd(temp[,i]) == 0) remove <- c(remove,i)
     }
-    temp <- temp[,-remove]
+    
+    if(!is.null(remove)) temp <- temp[,-remove]
     pca <- prcomp(temp, retx = T, scale=T)  # Make the PCA
     pca.results <- cbind(plant=plants, genotype=genotypes, data.frame(pca$x)[,])
     
