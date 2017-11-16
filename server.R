@@ -46,7 +46,7 @@ shinyServer(
       ## Preprocess the data manaully
       if(1==2){
           path <- "../rsmls/"
-          architect <- architect(inputrsml=path, rsml.connect=F, rsml.date="age", fitter=T)
+          architect <- architect(inputrsml=path, rsml.connect=T, rsml.date="age", fitter=T)
           genotypes <- unlist(lapply(strsplit(as.character(architect$FileName), "-"), `[[`, 1))[]
           architect$genotype <- genotypes
           save(architect, file="www/architect.RData")
